@@ -1,7 +1,7 @@
-(ns com.yetanalytics.datasim.json.schema-test
+(ns com.yetanalytics.schemer-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.json.schema :as js]))
+            [com.yetanalytics.schemer :as js]))
 
 (deftest number-boundaries->spec-test
   (testing "creation of number spec based on `type`, `min`, `exclusiveMin`, `max` and/or `exclusiveMax`"
@@ -400,4 +400,3 @@
                          {"number" "1600"
                           "street_name" "Pennsylvania"
                           "street_type" "Avenue"}))))))
-

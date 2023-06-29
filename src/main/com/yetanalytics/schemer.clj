@@ -1,5 +1,4 @@
-
-(ns com.yetanalytics.datasim.json.schema
+(ns com.yetanalytics.schemer
   (:require [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [cheshire.core :as json]
