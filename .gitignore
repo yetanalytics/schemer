@@ -16,3 +16,5 @@ pom.xml.asc
 .calva/
 .clj-kondo/.cache
 .nrepl-port
+.lsp/
+db.transit.json
