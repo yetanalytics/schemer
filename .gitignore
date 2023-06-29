@@ -10,5 +10,9 @@ pom.xml.asc
 .lein-repl-history
 .lein-plugins/
 .lein-failures
-.nrepl-port
+
+# VSCode
 .cpcache/
+.calva/
+.clj-kondo/.cache
+.nrepl-port
