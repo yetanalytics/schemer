@@ -1,9 +1,8 @@
 (ns com.yetanalytics.schemer
   (:require [clojure.spec.alpha :as s]
             [clojure.walk :as w]
-            [cheshire.core :as json]
-            [com.yetanalytics.datasim.json :as j]
-            [com.yetanalytics.datasim.util :as u]))
+            [cheshire.core :as json]))
+
 (set! *warn-on-reflection* true)
 ;; FIXME: what does this look like using the new default as-code/as-data protocols?
 ;; FIXME: what does this look like using spec2?
@@ -73,6 +72,36 @@
   map?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JSON Value
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::any
+  (s/nilable
+   (s/or :scalar
+         (s/or :string
+               string?
+               :number
+               (s/or :double
+                     (s/double-in :infinite? false :NaN? false
+                                  :max 1000.0 :min -1000.0)
+                     :int
+                     int?)
+               :boolean
+               boolean?)
+         :coll
+         (s/or :map
+               (s/map-of
+                string?
+                ::any
+                :gen-max 4)
+               :vector
+               (s/coll-of
+                ::any
+                :kind vector?
+                :into []
+                :gen-max 4)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Can be found anywhere
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -84,10 +113,10 @@
         :scalar ::valid-types))
 
 (s/def ::enum
-  (s/coll-of ::j/any :kind vector? :into [] :gen-max 3))
+  (s/coll-of ::any :kind vector? :into [] :gen-max 3))
 
 (s/def ::const
-  ::j/any)
+  ::any)
 
 (s/def ::base-schema
   (s/keys :opt-un [::type
@@ -218,7 +247,7 @@
   ::string-array)
 
 (s/def ::dependentRequired
-  (s/and (s/map-of ::string ::j/any :kind map?)
+  (s/and (s/map-of ::string ::any :kind map?)
          (fn [this]
            (if-let [the-props (or (get this "properties")
                                   (get this :properties))]
@@ -261,6 +290,23 @@
         :string  ::string-schema
         :array   ::array-schema
         :object  ::object-schema))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpr Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn dynamic-or
+  "Similar to `s/or`, but accepts a coll of `[:key pred]` pairs. Unlike
+   `s/or`, this accepts a dynamic number of such pairs (hence why it
+   is a function instead of a macro). This will only work properly if
+   `preds` are keywords or predicate functions."
+  [key-pred-pairs]
+  (let [keys  (mapv first key-pred-pairs)
+        preds (mapv second key-pred-pairs)]
+    ;; Yes, spec says not to use `or-spec-impl`, but we need to create
+    ;; `s/or` specs at runtime and it is much easier to bypass the macro
+    ;; instead of mixing compile-time and run-time code.
+    (s/or-spec-impl keys preds preds nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JSON Schema -> Spec
@@ -851,7 +897,7 @@
                        "array"   [:array (type->spec "array")]
                        "object"  [:object (type->spec "object")]))
                    schema-types)]
-    (u/dynamic-or pairs)))
+    (dynamic-or pairs)))
 
 (defn schema->spec
   ([rng schema]
@@ -874,7 +920,7 @@
                                ext-val-type)
              (string? ext-val-type)
              (schema-dispatch ext-val-type)
-             :else ::j/any))))
+             :else ::any))))
   ([rng complex-kind complex-schema]
    (case complex-kind
      "array" (array-schema->spec rng complex-schema)
