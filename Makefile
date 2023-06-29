@@ -1,6 +1,6 @@
 .PHONY: test ci
 
 test:
-	clj -X:test:runner
+	clojure -X:test:runner
 
 ci: test
