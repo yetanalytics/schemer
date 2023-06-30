@@ -26,4 +26,4 @@ jobs:
           artifact-id: 'schemer'
           version: ${{ steps.version.outputs.version }}
           clojars-username: ${{ secrets.CLOJARS_USERNAME }}
-          clojars-deploy-token: ${{ secrets.CLOJARS_DEPLOY_TOKEN }}
+          clojars-deploy-token: ${{ secrets.CLOJARS_PASSWORD }}
